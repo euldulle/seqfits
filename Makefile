@@ -1,6 +1,6 @@
 ################################################################
 #
-# Section définie par l'utilsateur : nom du projet et composantes
+# Section définie par l'utilisateur : nom du projet et composantes
 #
 #   contraintes  (amendables) d'implémentation choisies pour ce premier jet:
 #
@@ -23,7 +23,7 @@ project=projectname
 components=L300 L120 L30 R60 G60 B60 A60 H120 K60
 #
 # Fin de la section observateur 
-###################################################################################################
+###################################################################################
 # Section générique : elle traduit une 
 # stratégie d'acquisition/traitement classique en tâches ACQ et PROCESS.
 #
@@ -52,32 +52,41 @@ tasks := $(project).tasks
 rm := $(shell rm $(acq) $(process) $(tasks) 2>/dev/null)
 
 project: $(biaslist) $(darklist)  $(flatlist) $(lightlist)
-	@echo NEWPROCESS makemaster ${lightlist} |tee -a $(process)|tee -a $(tasks)
+	@echo NEWPROCESS makemaster ${lightlist} \
+		|tee -a $(process)|tee -a $(tasks)
 
 Master_Bias: Seq_Bias
-	@echo NEWPROCESS makemaster IMAGETYP="Bias" |tee -a $(process)|tee -a $(tasks)
+	@echo NEWPROCESS makemaster IMAGETYP="Bias" \
+		|tee -a $(process)|tee -a $(tasks)
 
 Seq_Bias:
-	@echo NEWACQ Seq IMAGETYP='Bias' |tee -a $(acq)|tee -a $(tasks)
+	@echo NEWACQ Seq IMAGETYP='Bias' \
+		|tee -a $(acq)|tee -a $(tasks)
 
 Master_Dark_%: Seq_Dark_%
-	@echo NEWPROCESS makemaster IMAGETYP="Dark" EXPTIME=$* |tee -a $(process)|tee -a $(tasks)
+	@echo NEWPROCESS makemaster IMAGETYP="Dark" EXPTIME=$* \
+		|tee -a $(process)|tee -a $(tasks)
 
 Seq_Dark_%:
-	@echo NEWACQ Seq IMAGETYP='Dark' EXPTIME=$* |tee -a $(acq)|tee -a $(tasks)
+	@echo NEWACQ Seq IMAGETYP='Dark' EXPTIME=$* \
+		|tee -a $(acq)|tee -a $(tasks)
 
 Master_Flat_%: Seq_Flat_%
-	@echo NEWPROCESS makemaster IMAGETYP="Flat"  FREQ=$*  |tee -a $(process)|tee -a $(tasks)
+	@echo NEWPROCESS makemaster IMAGETYP="Flat"  FREQ=$* \
+		|tee -a $(process)|tee -a $(tasks)
 
 Seq_Flat_%:
-	@echo NEWACQ Seq IMAGETYP='Flat' FREQ=$* |tee -a $(acq)|tee -a $(tasks)
+	@echo NEWACQ Seq IMAGETYP='Flat' FREQ=$* i\
+		|tee -a $(acq)|tee -a $(tasks)
 
 Master_Light_%: freq = $(shell i=$(*); echo $${i:0:1})
 Master_Light_%: exp =  $(shell i=$(*); echo $${i:1})
 Master_Light_%: Seq_Light_%
-	@echo NEWPROCESS makemaster IMAGETYP="Light" FREQ=$(freq) EXPTIME=$(exp) |tee -a $(process)|tee -a $(tasks)
+	@echo NEWPROCESS makemaster IMAGETYP="Light" FREQ=$(freq) EXPTIME=$(exp) \
+		|tee -a $(process)|tee -a $(tasks)
 
 Seq_Light_%: freq = $(shell i=$(*); echo $${i:0:1})
 Seq_Light_%: exp =  $(shell i=$(*); echo $${i:1})
 Seq_Light_%: 
-	@echo NEWACQ Seq IMAGETYP='Light' EXPTIME=$(exp) FREQ=$(freq) |tee -a $(acq) |tee -a $(tasks)
+	@echo NEWACQ Seq IMAGETYP='Light' EXPTIME=$(exp) FREQ=$(freq) \
+		|tee -a $(acq) |tee -a $(tasks)

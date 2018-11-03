@@ -10,7 +10,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage[french]{babel}
 \usepackage{hyperref}
-\usepackage{verbatim}
+\usepackage{moreverb}
 \setpapersize{A4}
 
 \oddsidemargin 20mm
@@ -25,8 +25,8 @@
 \newcommand{\be}{\begin{enumerate}}
 \newcommand{\ee}{\end{enumerate}}
 
-\title{Extensions FITS et règles de gestion des acquisitions et traitements des séquences d'images en astrophotographie\\ 20181102}
-\author{fm@dulle.fr}
+\title{Extensions FITS et règles de gestion des acquisitions et traitements des séquences d'images en astrophotographie}
+\author{https://github.com/euldulle/seqfits\\fm@dulle.fr}
 
 
 \pagestyle{myheadings}
@@ -37,6 +37,11 @@
 \parindent=0cm
 \parskip=0.3cm
 \section*{Résumé et motivations}
+
+(Ce document est principalement un document de travail orienté développement ;
+pour l'observateur, retenir que le projet vise à rendre possible le pilotage des 
+acquisitions et l'automatisation des traitements à partir d'un mimimum d'informations 
+-voir les 2 lignes "observateur" du Makefile).
 
 Pour un certain nombre de raisons, l'objet de base manipulé en astrophotographie amateur 
 n'est plus une image mais une séquence d'images. C'est valable autant pour les images de
@@ -63,7 +68,7 @@ où toutes les informations pertinentes à la réalisation du projet sont encod�
 fichiers FITS au moment de l'acquisition (ou de la conversion en fits pour les acquisitions APN).
 
 L'objectif est de déterminer le plus petit ensemble d'informations que doit fournir
-l'observateur pour que, moyennant quelques règles communes, logiciel d'acquisition et de traitement
+l'observateur pour que, moyennant quelques règles communes, logiciels d'acquisition et de traitement
 puissent faire leur travail sans que l'observateur ait à intervenir sur les détails 
 avant la production des images finales.
 
@@ -87,12 +92,12 @@ Le troisième élément c'est les règles à suivre par l'acquisition et le trai
 que le premier fasse ce qu'il faut pour que le deuxième puisse retrouver ses petits
 sans rien demander à personne.
 
-\section{Exemple symbolique, génération des tâches}
+\section{Exemple symbolique, Makefile, génération des tâches}
 
 Donc voilà le Makefile, suivi de la liste des tâches générées quand on
 mouline ce Makefile par un simple make.
 
-\verbatiminput{Makefile}
+\verbatimtabinput{Makefile}
 \bi
 \item Le fichier projectname.tasks (toutes les tâches dans l'ordre de création
 par le Makefile, donc dans l'ordre où il rencontre les contraintes
@@ -100,7 +105,7 @@ de construction) :
 \vspace{.5cm}
 
 
-\verbatiminput{projectname.tasks}
+\verbatimtabinput{projectname.tasks}
 
 \vspace{.5cm}
 
@@ -108,7 +113,7 @@ de construction) :
 \vspace{.5cm}
 
 
-\verbatiminput{projectname.acq}
+\verbatimtabinput{projectname.acq}
 
 \vspace{.5cm}
 
@@ -116,7 +121,7 @@ de construction) :
 \vspace{.5cm}
 
 
-\verbatiminput{projectname.process}
+\verbatimtabinput{projectname.process}
 \ei
 
 \section{Traduction des contraintes pour les logiciels acquisition et traitement}
@@ -184,7 +189,7 @@ On passe aux lights :
 \item NEWACQ Seq IMAGETYP=Light EXPTIME=300 FREQ=L
 \vspace{.5cm}
 
-Champs à inclure :
+Champs à inclure  en sortie :
 \vspace{.5cm}
 \be
 \item IMAGETYPE='Light'
@@ -194,7 +199,6 @@ Champs à inclure :
 \ee
 on fait la même chose pour tous les lights, en adaptant les champs FREQ et EXPTIME.
 
-\vspace{.5cm}
 
 \ei
 \subsection{Traitement}
@@ -235,18 +239,76 @@ Dans le cas du Dark, les mots-clés à inclure dans l'image master de sortie :
 Tous les darks sont traités de la même manière, avec un champ EXPTIME ajusté.
 \vspace{.5cm}
 
-\item NEWPROCESS makemaster IMAGETYP=Flat FREQ=A
-En ce qui concerne les flats, le MasterBias est la seule image avec IMAGETYP=MAsterBias ;
-le MasterDark A est la seule image avec IMAGETYP=MasterFlat ET EXPTIME=120. Donc
-on a toutes les informations pour faire le MasterFlat A. Idem pour toutes les
+\item NEWPROCESS makemaster IMAGETYP=Flat FREQ=L
+En ce qui concerne les flats, le MasterBias est la seule image avec IMAGETYP=MasterBias ;
+on a toutes les informations pour faire le MasterFlat L. Idem pour toutes les
 fréquences.
+
+En sortie :
 
 \be
 \item IMAGETYP='MasterFlat'
-\item EXPTIME=120
-\item FREQ='ALL'
+\item FREQ='L'
 \item SEQNUM = 0
 \ee
 \vspace{.5cm}
+
+\item NEWPROCESS makemaster IMAGETYP=Light FREQ=L EXPTIME=300
+
+\vspace{.5cm}
+En ce qui concerne les Lights, le MasterBias est la seule image avec IMAGETYP=MasterBias ;
+il y a une seule image MasterDark/ExpTime=300, il y a une seule image MasterFlat/FREQ=L,
+donc on a toutes les informations pour contruire le MasterLight/L/300. Idem pour toutes les
+fréquences et tous les temps de pose.
+
+En sortie :
+
+\be
+\item IMAGETYP='MasterLight'
+\item FREQ='A'
+\item EXPTIME='300'
+\item SEQNUM = 0
+\ee
+\vspace{.5cm}
+on fait la même chose pour tous les "Lights".
+
+\vspace{.5cm}
+Enfin pour la dernière étape, 
+\vspace{.5cm}
+
+\item NEWPROCESS composite Master\_Light\_L300 Master\_Light\_L120 Master\_Light\_L30 ...
+\vspace{.5cm}
+
+on peut simplement rendre la main à l'observateur pour la partie la plus
+intéressante du traitement.
+
+
 \ei
+\section{Contraintes/suggestions d'implémentation}
+\subsection{Spécifications}
+Le format des mots-clés FITS utilisés, notamment les valeurs légitimes pour chacun d'eux 
+doivent être standardisés pour autoriser l'interopérabilité des logiciels souhaitant implémenter
+la proposition.
+
+\subsection{Acquisition}
+La liste des tâches d'acquisition peut être implémentée comme liste déroulante à proposer
+à l'observateur. Des informations diverses sur l'état de chaque tâche peuvent accompagner cette liste, 
+comme le nombre d'images déjà existantes dans telle ou telle séquence ; la sélection d'une tâche 
+concernant une séquence déjà existante peut donner le choix entre ajouter des images à la séquence (SEQNUM adapté) 
+ou écraser l'existant (ça nécessite de faire le ménage pour éviter des ambiguïtés au traitement).
+
+Une tâche peut être marquée comme terminée par l'observateur, ça peut être une facilité pour le logiciel 
+de traitement.
+
+...
+\subsection{Traitement}
+La construction des séquences et de manière plus générale l'identification des images déjà acquises dans le 
+cadre du projet est la principale nouveauté ; ça peut paraître lourd ià implémenter parce que ça implique de 
+passer en revue les headers de tous les fichiers fits du répertoire de travail, mais d'une part les bénéfices 
+du point de vue utilisateur sont inappréciables et d'autre part, bien organisé c'est sans doute complètement 
+indolore en terme de temps de calcul par rapport au traitement lui-même.
+
+Sur le traitement lui-même, chaque tâche du fichier .tasks doit donner lieu à une partie de script ; ce n'est pas 
+forcément trivial à faire, mais toutes les informations pour produire le script final sont disponibles dans
+les images et les tâches de traitement.
 \end{document}

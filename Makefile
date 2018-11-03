@@ -8,7 +8,7 @@
 #       définissant la fréquence, et d'un nombre définissant le
 #       temps d'exposition en secondes. Les règles du Makefile utilise
 #		ces contraintes donc si on les modifie (si on veut plus de caracteres
-#		pour FREQ par exemple, il faudra modifier les recettes du Makefile
+#		pour FREQ par exemple), il faut modifier les recettes du Makefile
 #		en conséquence. L = NOFILTER
 #						R = RED
 #						G = GREEN
@@ -52,7 +52,7 @@ tasks := $(project).tasks
 rm := $(shell rm $(acq) $(process) $(tasks) 2>/dev/null)
 
 project: $(biaslist) $(darklist)  $(flatlist) $(lightlist)
-	@echo NEWPROCESS makemaster ${lightlist} \
+	@echo NEWPROCESS composite ${lightlist} \
 		|tee -a $(process)|tee -a $(tasks)
 
 Master_Bias: Seq_Bias
@@ -76,7 +76,7 @@ Master_Flat_%: Seq_Flat_%
 		|tee -a $(process)|tee -a $(tasks)
 
 Seq_Flat_%:
-	@echo NEWACQ Seq IMAGETYP='Flat' FREQ=$* i\
+	@echo NEWACQ Seq IMAGETYP='Flat' FREQ=$* \
 		|tee -a $(acq)|tee -a $(tasks)
 
 Master_Light_%: freq = $(shell i=$(*); echo $${i:0:1})
